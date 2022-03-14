@@ -1,0 +1,80 @@
+export const DEVICES = [
+  {
+    id: 1,
+    name: 'Samsung s1',
+    status: 'online',
+    ip: '180.50.10.1',
+  },
+  {
+    id: 2,
+    name: 'Samsung s2',
+    status: 'offline',
+    ip: '180.44.56.78',
+  },
+  {
+    id: 3,
+    name: 'Samsung s3',
+    status: 'online',
+    ip: '180.88.88.88',
+  },
+  {
+    id: 4,
+    name: 'Samsung s4',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 5,
+    name: 'Samsung s1',
+    status: 'online',
+    ip: '180.50.10.1',
+  },
+  {
+    id: 6,
+    name: 'Samsung s2',
+    status: 'offline',
+    ip: '180.44.56.78',
+  },
+  {
+    id: 7,
+    name: 'Samsung s3',
+    status: 'online',
+    ip: '180.88.88.88',
+  },
+  {
+    id: 8,
+    name: 'Samsung s4',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 9,
+    name: 'Samsung s10',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 10,
+    name: 'Samsung s10',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 11,
+    name: 'Samsung s4',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 12,
+    name: 'Samsung s10',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+  {
+    id: 13,
+    name: 'Samsung s10',
+    status: 'online',
+    ip: '180.45.88.45',
+  },
+];
