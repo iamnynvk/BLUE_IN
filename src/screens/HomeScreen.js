@@ -126,7 +126,7 @@ const HomeScreen = ({navigation}) => {
         <Text
           style={styles.textConnect}
           onPress={() => {
-            navigation.navigate(NAVIGATION.ABOUT);
+            navigation.navigate(NAVIGATION.BLUETOOTH);
           }}>
           Please Turn on bluetooth
         </Text>
