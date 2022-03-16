@@ -7,6 +7,8 @@ import {
   AppState,
   PermissionsAndroid,
   Platform,
+  BackHandler,
+  Alert,
 } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import {NAVIGATION, SIZES} from '../constants';
@@ -15,10 +17,11 @@ import {NAVIGATION, SIZES} from '../constants';
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
-const BluetoothConnection = () => {
+const BluetoothConnection = ({navigation}) => {
   const [isScanning, setIsScanning] = useState(false);
   const peripheralsData = new Map();
   const [list, setList] = useState([]);
+  const [getID, setGetID] = useState();
 
   const deviceList = ['HOPS_CARDIO', 'Medical'];
 
@@ -26,20 +29,31 @@ const BluetoothConnection = () => {
   const [appState, setAppState] = useState(AppState.currentState);
 
   useEffect(() => {
+    console.log('id', getID);
     const appStateListener = AppState.addEventListener(
       'change',
       nextAppState => {
-        console.log('Next AppState is: ', nextAppState);
+        console.log('current AppState is: ', nextAppState);
         setAppState(nextAppState);
+
+        if (nextAppState == 'background') {
+          console.log('App is in background');
+          BleManager.stopScan();
+          console.log('user ID :', getID);
+          BleManager.disconnect(getID);
+        } else if (nextAppState == 'active') {
+          startScan();
+        }
       },
     );
 
     return () => {
       appStateListener.remove();
     };
-  }, []);
+  }, [getID]);
 
   // Permission check
+
   useEffect(() => {
     if (Platform.OS === 'android' && Platform.Version >= 23) {
       PermissionsAndroid.check(
@@ -81,46 +95,64 @@ const BluetoothConnection = () => {
     BleManager.start();
 
     startScan();
-  }, [appState]);
+  }, []);
 
   // Bluetooth get Data Peripheral
   const bleDiscoverPeripheral = peripherals => {
     const {name} = peripherals;
 
-    console.log('Peripheral Name : ', peripherals);
+    // console.log('Peripheral Name : ', peripherals);
 
     if (deviceList.includes(name)) {
       if (peripherals.name != null && peripherals.name == name) {
-        peripheralsData.set(peripherals.id, peripherals);
+        if (peripherals.connected) {
+          BleManager.disconnect(peripherals.id);
+        } else {
+          setGetID(peripherals.id);
 
-        BleManager.connect(peripherals.id).then(() => {
-          console.log('connect to ', peripheralsData.get(peripherals.id).name);
+          peripheralsData.set(peripherals.id, peripherals);
 
-          setTimeout(() => {
-            BleManager.retrieveServices(peripherals.id).then(peripheralInfo => {
-              let service_uuid = '180d';
-              let notify_uuid = '1801';
-              let bettery_notify_uuid = '1802';
-              let position_notify_uuid = '1803';
+          BleManager.connect(peripherals.id).then(() => {
+            let p = peripheralsData.get(peripherals.id);
+            if (p) {
+              console.log('This is p Value :::::::::::>>>>', p);
+              p.connected = true;
+              peripheralsData.set(peripherals.id, p);
+              setList(Array.from(peripheralsData.values()));
+              console.log(
+                'connect to ',
+                peripheralsData.get(peripherals.id).name,
+              );
+            }
 
-              peripheralInfo.characteristics.map(Item => {
-                if (Item.service === service_uuid) {
-                  console.log('service ID : ', Item);
+            setTimeout(() => {
+              BleManager.retrieveServices(peripherals.id).then(
+                peripheralInfo => {
+                  let service_uuid = '180d';
+                  let notify_uuid = '1801';
+                  let bettery_notify_uuid = '1802';
+                  let position_notify_uuid = '1803';
 
-                  BleManager.startNotification(
-                    peripherals.id,
-                    service_uuid,
-                    notify_uuid,
-                  ).then(() => {
-                    console.log(
-                      'startNotification Start ==> ' + peripherals.id,
-                    );
+                  peripheralInfo.characteristics.map(Item => {
+                    if (Item.service === service_uuid) {
+                      console.log('service ID : ', Item);
+
+                      BleManager.startNotification(
+                        peripherals.id,
+                        service_uuid,
+                        notify_uuid,
+                      ).then(() => {
+                        console.log(
+                          'startNotification Start ==> ' + peripherals.id,
+                        );
+                      });
+                    }
                   });
-                }
-              });
-            });
-          }, 500);
-        });
+                },
+              );
+            }, 500);
+          });
+        }
       }
     }
   };
@@ -193,6 +225,19 @@ const BluetoothConnection = () => {
           marginTop: SIZES.base * 2,
         }}>
         Bluetooth : {isScanning ? 'on' : 'off'}
+      </Text>
+
+      <Text
+        onPress={() => {
+          navigation.navigate(NAVIGATION.HOME);
+        }}
+        style={{
+          fontFamily: 'OpenSans-Medium',
+          fontSize: 15,
+          alignSelf: 'center',
+          marginTop: SIZES.base * 3,
+        }}>
+        Go to Design Bluetooth Screen
       </Text>
     </View>
   );
