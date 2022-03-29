@@ -30,7 +30,7 @@ const AboutScreen = ({navigation}) => {
     if (!isScanning) {
       BleManager.scan([], 10, false)
         .then(results => {
-          //   console.log('Scanning...');
+          console.log('Scanning...');
           setIsScanning(true);
         })
         .catch(err => {
@@ -55,13 +55,13 @@ const AboutScreen = ({navigation}) => {
   };
 
   const handleUpdateValueForCharacteristic = data => {
-    // console.log(
-    //   'Received data from ' +
-    //     data.peripheral +
-    //     ' characteristic ' +
-    //     data.characteristic,
-    //   data.value,
-    // );
+    console.log(
+      'Received data from ' +
+        data.peripheral +
+        ' characteristic ' +
+        data.characteristic,
+      data.value,
+    );
   };
 
   const retrieveConnected = () => {

@@ -9,7 +9,7 @@ import {
   Platform,
 } from 'react-native';
 import BleManager from 'react-native-ble-manager';
-import {NAVIGATION, SIZES} from '../constants';
+import {NAVIGATION, SIZES} from '../../constants';
 
 const BleManagerModule = NativeModules.BleManager;
 const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);

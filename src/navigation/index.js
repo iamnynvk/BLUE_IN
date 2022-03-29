@@ -13,7 +13,7 @@ LogBox.ignoreLogs([
 const index = () => {
   return (
     <AuthProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#32617b" />
+      <StatusBar barStyle="light-content" backgroundColor="#233975" />
       <Routes />
     </AuthProvider>
   );
