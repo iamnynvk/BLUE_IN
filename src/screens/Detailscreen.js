@@ -8,7 +8,6 @@ import {
   Platform,
   StyleSheet,
   ScrollView,
-  BackHandler,
   ToastAndroid,
 } from 'react-native';
 import BleManager from 'react-native-ble-manager';
@@ -27,7 +26,8 @@ const Detailscreen = props => {
 
   const deviceList = ['HOPS_CARDIO', 'Medical'];
 
-  const {patientID, MACAddress} = props.route.params;
+  const {patientFirstName, patientLastName, patientID, MACAddress} =
+    props.route.params;
 
   const [patientData, setPatientData] = useState([]);
   const [temp, setTemp] = useState();
@@ -35,7 +35,14 @@ const Detailscreen = props => {
   const [bp, setBp] = useState();
   const [weight, setWeight] = useState();
   const [glucose, setGlucose] = useState();
-  const [pulse, setPulse] = useState();
+  const [pulse, setPulse] = useState([]);
+  const [connectedDevice, setConnectedDevice] = useState();
+
+  const [pulseRecord, setPulseRecord] = useState([]);
+  const [spo2Record, setSpo2Record] = useState([]);
+
+  let pulseArray = [];
+  let spo2Array = [];
 
   // Data fetching from API
   useEffect(() => {
@@ -95,7 +102,6 @@ const Detailscreen = props => {
   }, [getID]);
 
   // Permission check
-
   useEffect(() => {
     if (Platform.OS === 'android' && Platform.Version >= 23) {
       PermissionsAndroid.check(
@@ -117,6 +123,69 @@ const Detailscreen = props => {
       });
     }
   }, []);
+
+  useEffect(() => {
+    let interval = setInterval(() => {
+      if (pulseRecord.length > 0 && spo2Record.length > 0) {
+        let sumPulse = 0;
+        let sumSpo2 = 0;
+        pulseRecord.map(items => {
+          sumPulse += items;
+        });
+
+        spo2Record.map(item => {
+          sumSpo2 += item;
+        });
+
+        const pulseAvg = sumPulse / pulseRecord.length;
+        const spo2Avg = sumSpo2 / spo2Record.length;
+
+        setPulse(pulseAvg.toFixed(0));
+        setSpo2(spo2Avg.toFixed(0));
+
+        setPulseRecord([]);
+        setSpo2Record([]);
+
+        console.log('This is Pulse Average : ', pulseAvg.toFixed(0));
+        console.log('This is Spo2 Avg : ', spo2Avg.toFixed(0));
+
+        async function saveData() {
+          const getCurrentTime = new Date().getTime();
+
+          const date = {
+            vital: 'spo2',
+            value1: spo2Avg.toFixed(0),
+            value1uom: 'bpm',
+            value2: pulseAvg.toFixed(0),
+            value2uom: '%',
+            datetime: getCurrentTime,
+            firstName: patientFirstName,
+            lastName: patientLastName,
+            patientId: patientID,
+            MACAddress: MACAddress,
+          };
+
+          const response = await fetch('http://167.71.225.187:9000/vitals/', {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(date),
+          });
+
+          const data = await response.json();
+          console.log('this is data :', data);
+        }
+
+        saveData();
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [connectedDevice, pulseRecord, spo2Record]);
 
   // Start Scan Bluetooth
   const startScan = () => {
@@ -151,6 +220,7 @@ const Detailscreen = props => {
     if (deviceList.includes(name)) {
       if (peripherals.name != null && peripherals.name == name) {
         if (peripherals?.connected) {
+          setConnectedDevice(true);
           BleManager.disconnect(peripherals.id);
 
           ToastAndroid.showWithGravity(
@@ -161,7 +231,7 @@ const Detailscreen = props => {
           );
         } else {
           setGetID(peripherals.id);
-
+          setConnectedDevice(true);
           peripheralsData.set(peripherals.id, peripherals);
 
           BleManager.connect(peripherals.id).then(() => {
@@ -259,6 +329,7 @@ const Detailscreen = props => {
     let peripheral = peripheralsData.get(data.peripheral);
     if (peripheral) {
       peripheral.connected = false;
+      setConnectedDevice(false);
       peripheralsData.set(data.peripheral, peripheral);
       setList(Array.from(peripheralsData.values()));
     }
@@ -300,7 +371,20 @@ const Detailscreen = props => {
       let pulse = parseInt(toHexString(byteToHex(data[1])), 16);
       let spo2 = parseInt(toHexString(byteToHex(data[2])), 16);
       let pi = parseInt(toHexString(byteToHex(data[3])), 16) / 10;
-      console.log('>>>>>>>>>>', pulse, spo2, pi);
+
+      if (pulseArray.length <= 10 && spo2Array.length <= 10) {
+        pulseArray.push(pulse);
+        spo2Array.push(spo2);
+      } else {
+        pulseArray = [];
+        spo2Array = [];
+        pulseArray.push(pulse);
+        spo2Array.push(spo2);
+      }
+
+      setPulseRecord(pulseArray);
+      setSpo2Record(spo2Array);
+      console.log('this is PI :', pi);
     }
   }
 
